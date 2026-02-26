@@ -1,0 +1,138 @@
+version: 2
+
+before:
+  hooks:
+    - make check
+
+builds:
+  - main: ./cmd/rioni
+    binary: rioni
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - freebsd
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+release:
+  ids:
+    - generic-archives
+    - linux-packages
+
+checksum:
+  split: true
+  ids:
+    - generic-archives
+    - linux-packages
+
+archives:
+  - id: generic-archives
+    formats: [tar.gz]
+    files:
+      - src: build/package/run.{{ if eq .Os "windows" }}bat{{ else }}sh{{ end }}
+        strip_parent: true
+      - LICENSE
+      - NOTICE
+      - README.md
+      - configs/rioni.cfg.yml
+      - licenses/*
+      - docs/*
+    name_template: >-
+      {{ .ProjectName }}-{{ .Version }}-{{- .Os }}-
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+nfpms:
+  - id: linux-packages
+    package_name: rioni
+    formats:
+      - deb
+      - rpm
+    file_name_template: >-
+      {{ .PackageName }}-{{ .Version }}-
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    license: "Apache-2.0"
+    description: "Rioni is a free and open-source DNS proxy server."
+    homepage: "https://github.com/AndreySenov/rioni"
+    maintainer: "Andrey Senov <25459444+AndreySenov@users.noreply.github.com>"
+    bindir: /usr/bin
+    contents:
+      - src: ./build/package/rioni.service
+        dst: /lib/systemd/system/rioni.service
+      - src: ./configs/rioni.linux.yml
+        dst: /etc/rioni/configs/rioni.cfg.yml
+        type: config
+      - src: ./LICENSE
+        dst: /usr/share/doc/rioni/LICENSE
+      - src: ./NOTICE
+        dst: /usr/share/doc/rioni/NOTICE
+      - src: ./licenses/*
+        dst: /usr/share/doc/rioni/licenses/
+      - src: ./README.md
+        dst: /usr/share/doc/rioni/README.md
+      - src: ./docs/*
+        dst: /usr/share/doc/rioni/docs
+    scripts:
+      preinstall: build/package/preinstall.sh
+      postinstall: build/package/postinstall.sh
+    overrides:
+      deb:
+        dependencies:
+          - ca-certificates
+      rpm:
+        dependencies:
+          - ca-certificates
+
+brews:
+  - ids:
+      - generic-archives
+    name: rioni
+    homepage: "https://github.com/AndreySenov/rioni"
+    description: "Rioni is a free and open-source DNS proxy server."
+    license: "Apache-2.0"
+    directory: Formula
+    repository:
+      owner: AndreySenov
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    install: |-
+      bin.install "rioni"
+      (pkgetc/"configs").install "configs/rioni.cfg.yml"
+      doc.install "README.md"
+      doc.install "NOTICE"
+      doc.install "LICENSE"
+      doc.install Dir["licenses/*"]
+      doc.install Dir["docs/*"]
+    custom_block: |-
+      service do
+        environment_variables(
+          RIONI_SERVER_HTTP_TLS_CERT_FILE: pkgetc/"tls/rioni.crt",
+          RIONI_SERVER_HTTP_TLS_KEY_FILE: pkgetc/"tls/rioni.key",
+        )
+        run [opt_bin/"rioni", "--config", pkgetc/"configs/rioni.cfg.yml"]
+        keep_alive true
+      end
+    test: |-
+      system "#{bin}/rioni", "--version"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
