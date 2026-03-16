@@ -112,7 +112,7 @@ brews:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     install: |-
       bin.install "rioni"
-      (pkgetc/"configs").install "configs/rioni.cfg.yml"
+      (etc/"rioni/configs").install "configs/rioni.cfg.yml"
       doc.install "README.md"
       doc.install "NOTICE"
       doc.install "LICENSE"
@@ -121,10 +121,10 @@ brews:
     custom_block: |-
       service do
         environment_variables(
-          RIONI_SERVER_HTTP_TLS_CERT_FILE: pkgetc/"tls/rioni.crt",
-          RIONI_SERVER_HTTP_TLS_KEY_FILE: pkgetc/"tls/rioni.key",
+          RIONI_SERVER_HTTP_TLS_CERT_FILE: etc/"rioni/tls/rioni.crt",
+          RIONI_SERVER_HTTP_TLS_KEY_FILE: etc/"rioni/tls/rioni.key",
         )
-        run [opt_bin/"rioni", "--config", pkgetc/"configs/rioni.cfg.yml"]
+        run [opt_bin/"rioni", "--config", etc/"rioni/configs/rioni.cfg.yml"]
         keep_alive true
       end
     test: |-
