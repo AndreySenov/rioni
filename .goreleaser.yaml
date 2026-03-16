@@ -116,8 +116,8 @@ brews:
       doc.install "README.md"
       doc.install "NOTICE"
       doc.install "LICENSE"
-      doc.install Dir["licenses/*"]
-      doc.install Dir["docs/*"]
+      (doc/"licenses").install Dir["licenses/*"]
+      (doc/"docs").install Dir["docs/*"]
     custom_block: |-
       service do
         environment_variables(
