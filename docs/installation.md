@@ -12,6 +12,22 @@ Official releases can be downloaded from the [GitHub Releases](https://github.co
 | macOS   | `.tar.gz`                 |
 | Windows | `.zip`                    |
 
+## Homebrew
+
+The easiest way to install and manage Rioni on Linux and macOS is through [Homebrew](https://brew.sh).
+This method automatically handles updates and configures Rioni to run as a system service.
+
+To get started quickly, run:
+
+```sh
+$ brew tap andreysenov/tap
+$ brew install rioni
+$ sudo brew services start rioni
+```
+
+For detailed step-by-step instructions,
+please refer to the guide [How to install Rioni on Linux and macOS with Homebrew](installation_guide_homebrew_linux_macos.md).
+
 ## Linux Packages
 
 Standard installation packages are available for Linux.
@@ -34,18 +50,6 @@ Run the service using the following command:
 
 ```sh
 $ sudo systemctl start rioni
-```
-
-## Homebrew Packages
-
-Home brew packages are available for Linux and macOS.
-Use the following commands to install Rioni.
-After installation, Rioni will be registered as a homebrew service.
-
-```sh
-$ brew tap AndreySenov/homebrew-tap
-$ brew install rioni
-$ brew services start rioni
 ```
 
 ## Generic Archives
