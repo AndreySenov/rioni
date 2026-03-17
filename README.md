@@ -1,5 +1,11 @@
 # Rioni
 
+[![Build Status](https://github.com/AndreySenov/rioni/actions/workflows/default.yml/badge.svg)](https://github.com/AndreySenov/rioni/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/AndreySenov/rioni)](https://goreportcard.com/report/github.com/AndreySenov/rioni)
+[![Latest Release](https://img.shields.io/github/v/release/AndreySenov/rioni?color=00ADD8)](https://github.com/AndreySenov/rioni/releases)
+[![License](https://img.shields.io/github/license/AndreySenov/rioni?color=00ADD8)](LICENSE)
+
+
 A free and open-source DNS proxy server.
 
 ## Overview
