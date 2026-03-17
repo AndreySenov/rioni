@@ -8,7 +8,7 @@ Ensure you have [Homebrew](https://brew.sh) installed on your Linux or macOS.
 
 ## Installation
 
-### 1. Add the Tap and Install
+### Add the Tap and Install
 
 Run the following commands to add the repository and install the Rioni formula:
 
@@ -17,7 +17,7 @@ $ brew tap andreysenov/tap
 $ brew install rioni
 ```
 
-### 2. Start the Service
+### Start the Service
 
 Since Rioni uses privileged ports (53 and 443) by default,
 you may need to start it with root privileges to allow it to bind to these ports:
@@ -28,7 +28,7 @@ $ sudo brew services start rioni
 
 _Note: If you configure Rioni to use ports above 1024, you can run it without `sudo`._
 
-### 3. Verify Installation
+### Verify Installation
 
 Check if the service is active and running:
 
@@ -38,7 +38,7 @@ sudo brew services list | grep rioni
 
 _Note: If you start the service without `sudo`, you must also check its status without `sudo`._
 
-### 4. Test Connection
+### Test Connection
 
 Verify that Rioni is correctly processing requests using `dig`:
 
@@ -79,7 +79,7 @@ $ sudo nano $(brew --prefix)/etc/rioni/configs/rioni.cfg.yml
 Any changes to the configuration require a service restart to take effect:
 
 ```sh
-$ sudo brew services restart rioni
+$ sudo services restart rioni
 ```
 
 ## See Also

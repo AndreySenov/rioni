@@ -1,16 +1,9 @@
 # Installation
 
 Rioni provides pre-built binaries for arm64 and amd64 architectures,
-supporting Linux, FreeBSD, macOS, and Windows.
+supporting Linux, macOS, FreeBSD, and Windows.
 
 Official releases can be downloaded from the [GitHub Releases](https://github.com/AndreySenov/rioni/releases) page.
-
-| OS      | Package Format            |
-|---------|---------------------------|
-| Linux   | `.tar.gz`, `.deb`, `.rpm` |
-| FreeBSD | `.tar.gz`                 |
-| macOS   | `.tar.gz`                 |
-| Windows | `.zip`                    |
 
 ## Homebrew
 
@@ -28,29 +21,20 @@ $ sudo brew services start rioni
 For detailed step-by-step instructions,
 please refer to the guide [How to install Rioni on Linux and macOS with Homebrew](installation_guide_homebrew_linux_macos.md).
 
-## Linux Packages
+## Linux Packages (DEB/RPM)
 
-Standard installation packages are available for Linux.
-Download the package for your system and architecture, then install it
-from the directory where the file was downloaded.
-After installation, Rioni will be registered as a systemd service.
-Replace `*` with the actual name of the package you downloaded before running the commands below.
+For a native experience on Debian-based or Red Hat-based distributions,
+you can install Rioni using standard package managers.
 
-### Debian-based Linux Distributions
-```sh
-$ sudo apt install ./rioni-*.deb
-```
-
-### RPM-based Linux Distributions
-```sh
-$ sudo rpm -i ./rioni-*.rpm
-```
-
-Run the service using the following command:
+To get started quickly, run:
 
 ```sh
-$ sudo systemctl start rioni
+$ curl -sSfL https://raw.githubusercontent.com/AndreySenov/rioni/main/install/linux_package.sh | sh
+$ sudo systemctl enable --now rioni
 ```
+
+For detailed step-by-step instructions,
+please refer to the guide [How to install Rioni on Linux from DEB and RPM packages](installation_guide_linux_package.md).
 
 ## Generic Archives
 
