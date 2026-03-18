@@ -12,7 +12,7 @@ echo
 echo "Rioni has been installed."
 echo
 echo "Review the configuration:"
-echo "  /etc/rioni/rioni.cfg.yml"
+echo "  /etc/rioni/configs/rioni.cfg.yml"
 echo
 echo "Then enable and start the service with:"
 echo "  sudo systemctl enable --now rioni"

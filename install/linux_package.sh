@@ -69,5 +69,4 @@ echo "Installing Rioni..."
 $INSTALL_CMD "$TEMP_PKG"
 
 rm -f "$TEMP_PKG"
-echo "Rioni installed successfully!"
-echo "To start the service, run: sudo systemctl enable --now rioni"
+echo "Installation completed."
