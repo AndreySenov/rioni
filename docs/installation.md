@@ -13,9 +13,9 @@ This method automatically handles updates and configures Rioni to run as a syste
 To get started quickly, run:
 
 ```sh
-$ brew tap andreysenov/tap
-$ brew install rioni
-$ sudo brew services start rioni
+brew tap andreysenov/tap
+brew install rioni
+sudo brew services start rioni
 ```
 
 For detailed step-by-step instructions,
@@ -29,8 +29,8 @@ you can install Rioni using standard package managers.
 To get started quickly, run:
 
 ```sh
-$ curl -sSfL https://raw.githubusercontent.com/AndreySenov/rioni/main/install/linux_package.sh | sh
-$ sudo systemctl enable --now rioni
+curl -sSfL https://raw.githubusercontent.com/AndreySenov/rioni/main/install/linux_package.sh | sh
+sudo systemctl enable --now rioni
 ```
 
 For detailed step-by-step instructions,
@@ -50,10 +50,10 @@ Replace `*` with the actual name of the archive you downloaded and
 before running the commands below.
 
 ```sh
-$ tar -xzf rioni-*.tar.gz -C <path>
-$ cd <path>
-$ chmod +x ./run.sh
-$ ./run.sh
+tar -xzf rioni-*.tar.gz -C <path>
+cd <path>
+chmod +x ./run.sh
+./run.sh
 ```
 
 ### Windows

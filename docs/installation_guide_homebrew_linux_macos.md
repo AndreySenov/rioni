@@ -13,8 +13,8 @@ Ensure you have [Homebrew](https://brew.sh) installed on your Linux or macOS.
 Run the following commands to add the repository and install the Rioni formula:
 
 ```sh
-$ brew tap andreysenov/tap
-$ brew install rioni
+brew tap andreysenov/tap
+brew install rioni
 ```
 
 ### Start the Service
@@ -23,7 +23,7 @@ Since Rioni uses privileged ports (53 and 443) by default,
 you may need to start it with root privileges to allow it to bind to these ports:
 
 ```sh
-$ sudo brew services start rioni
+sudo brew services start rioni
 ```
 
 _Note: If you configure Rioni to use ports above 1024, you can run it without `sudo`._
@@ -45,19 +45,19 @@ Verify that Rioni is correctly processing requests using `dig`:
 #### Classic DNS (Port 53):
 
 ```sh
-$ dig @127.0.0.1 -p 53 example.com
+dig @127.0.0.1 -p 53 example.com
 ```
 
 #### DoH POST (Port 443):
 
 ```sh
-$ dig @127.0.0.1 -p 443 +https example.com
+dig @127.0.0.1 -p 443 +https example.com
 ```
 
 #### DoH GET (Port 443):
 
 ```sh
-$ dig @127.0.0.1 -p 443 +https-get example.com
+dig @127.0.0.1 -p 443 +https-get example.com
 ```
 
 ### Locate the Configuration File
@@ -73,13 +73,13 @@ The default path for the configuration file is:
 Edit the configuration file with your favorite text editor, e.g.:
 
 ```sh
-$ sudo nano $(brew --prefix)/etc/rioni/configs/rioni.cfg.yml
+sudo nano $(brew --prefix)/etc/rioni/configs/rioni.cfg.yml
 ```
 
 Any changes to the configuration require a service restart to take effect:
 
 ```sh
-$ sudo services restart rioni
+sudo services restart rioni
 ```
 
 ## See Also

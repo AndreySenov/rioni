@@ -17,14 +17,14 @@ The default configuration file locations are:
 You can specify a custom configuration file path using the `--config` CLI flag:
 
 ```sh
-$ rioni --config /path/to/rioni/config.yml
+rioni --config /path/to/rioni/config.yml
 ```
 
 Another way to specify the configuration file is by setting the `RIONI_CONFIG_FILE` environment variable:
 
 ```sh
-$ export RIONI_CONFIG_FILE=/path/to/rioni/config.yml
-$ rioni
+export RIONI_CONFIG_FILE=/path/to/rioni/config.yml
+rioni
 ```
 
 If you specify both the `--config` flag and the `RIONI_CONFIG_FILE` environment variable,
