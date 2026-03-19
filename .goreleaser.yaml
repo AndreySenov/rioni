@@ -80,11 +80,11 @@ nfpms:
         dst: /usr/share/doc/rioni/LICENSE
       - src: ./NOTICE
         dst: /usr/share/doc/rioni/NOTICE
-      - src: ./licenses/*
-        dst: /usr/share/doc/rioni/licenses/
+      - src: ./licenses
+        dst: /usr/share/doc/rioni/licenses
       - src: ./README.md
         dst: /usr/share/doc/rioni/README.md
-      - src: ./docs/*
+      - src: ./docs
         dst: /usr/share/doc/rioni/docs
     scripts:
       preinstall: build/package/preinstall.sh
