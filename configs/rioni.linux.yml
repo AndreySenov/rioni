@@ -13,6 +13,7 @@ rioni:
         - "1.1.1.1" # Cloudflare DNS
   server:
     http:
+      enable: true # enable HTTP server
       address: "${RIONI_SERVER_HTTP_ADDRESS:-:443}" # address to listen on
       read-header-timeout: 5s # maximum time to read request headers
       read-timeout: 10s # maximum time to read the entire request (header + body)
@@ -24,6 +25,7 @@ rioni:
         key-file: "${RIONI_SERVER_HTTP_TLS_KEY_FILE:-/var/lib/rioni/tls/rioni.key}" # path to a private key file
         build-self-signed: true # if cert-file and key-file do not exist, generate them
     dns:
+      enable: true # enable DNS server
       address: "${RIONI_SERVER_DNS_ADDRESS:-:53}" # address to listen on
       read-timeout: 2s # maximum time to read a request
       write-timeout: 2s # maximum time to write a response

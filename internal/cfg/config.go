@@ -42,6 +42,7 @@ type Server struct {
 }
 
 type HttpConfig struct {
+	EnableStr            string    `yaml:"enable" env:"ENABLE" envDefault:"true"`
 	AddressStr           string    `yaml:"address" env:"ADDRESS" envDefault:":443"`
 	ReadHeaderTimeoutStr string    `yaml:"read-header-timeout" env:"READ_HEADER_TIMEOUT" envDefault:"5s"`
 	ReadTimeoutStr       string    `yaml:"read-timeout" env:"READ_TIMEOUT" envDefault:"10s"`
@@ -49,6 +50,10 @@ type HttpConfig struct {
 	WriteTimeoutStr      string    `yaml:"write-timeout" env:"WRITE_TIMEOUT" envDefault:"10s"`
 	IdleTimeoutStr       string    `yaml:"idle-timeout" env:"IDLE_TIMEOUT" envDefault:"30s"`
 	Tls                  TlsConfig `yaml:"tls" envPrefix:"TLS_"`
+}
+
+func (h HttpConfig) IsEnabled() bool {
+	return parseBool(h.EnableStr)
 }
 
 func (h HttpConfig) Address() string {
@@ -80,9 +85,9 @@ func (h HttpConfig) IdleTimeout() time.Duration {
 }
 
 type TlsConfig struct {
-	CertFileStr     string `yaml:"cert-file" env:"CERT_FILE"`
-	KeyFileStr      string `yaml:"key-file" env:"KEY_FILE"`
-	BuildSelfSigned bool   `yaml:"build-self-signed" env:"BUILD_SELF_SIGNED" envDefault:"true"`
+	CertFileStr        string `yaml:"cert-file" env:"CERT_FILE"`
+	KeyFileStr         string `yaml:"key-file" env:"KEY_FILE"`
+	BuildSelfSignedStr string `yaml:"build-self-signed" env:"BUILD_SELF_SIGNED" envDefault:"true"`
 }
 
 func (t TlsConfig) CertFile() string {
@@ -94,13 +99,18 @@ func (t TlsConfig) KeyFile() string {
 }
 
 func (t TlsConfig) IsBuildSelfSigned() bool {
-	return t.BuildSelfSigned
+	return parseBool(t.BuildSelfSignedStr)
 }
 
 type DnsConfig struct {
+	EnableStr       string `yaml:"enable" env:"ENABLE" envDefault:"true"`
 	AddressStr      string `yaml:"address" env:"ADDRESS" envDefault:":53"`
 	ReadTimeoutStr  string `yaml:"read-timeout" env:"READ_TIMEOUT" envDefault:"2s"`
 	WriteTimeoutStr string `yaml:"write-timeout" env:"WRITE_TIMEOUT" envDefault:"2s"`
+}
+
+func (d DnsConfig) IsEnabled() bool {
+	return parseBool(d.EnableStr)
 }
 
 func (d DnsConfig) Address() string {

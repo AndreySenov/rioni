@@ -41,3 +41,12 @@ func parseSize(s string) int64 {
 
 	return 0
 }
+
+func parseBool(s string) bool {
+	switch strings.TrimSpace(strings.ToLower(s)) {
+	case "true", "1", "yes", "y":
+		return true
+	default:
+		return false
+	}
+}

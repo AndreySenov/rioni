@@ -35,3 +35,33 @@ func TestParseSize(t *testing.T) {
 		})
 	}
 }
+
+func TestParseBool(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"empty string", "", false},
+		{"true lowercase", "true", true},
+		{"true uppercase", "TRUE", true},
+		{"false lowercase", "false", false},
+		{"false uppercase", "FALSE", false},
+		{"one", "1", true},
+		{"zero", "0", false},
+		{"yes lowercase", "yes", true},
+		{"yes uppercase", "YES", true},
+		{"no lowercase", "no", false},
+		{"no uppercase", "NO", false},
+		{"invalid", "invalid", false},
+		{"spaces around true", " true ", true},
+		{"spaces around false", " false ", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseBool(tt.input)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}

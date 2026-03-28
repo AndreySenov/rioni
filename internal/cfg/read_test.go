@@ -25,6 +25,8 @@ func TestReadEnv(t *testing.T) {
 		require.Nil(t, relay.Client.Dns)
 
 		http := cfg.Rioni.Server.Http
+		require.Equal(t, "true", http.EnableStr)
+		require.True(t, http.IsEnabled())
 		require.Equal(t, ":443", http.AddressStr)
 		require.Equal(t, ":443", http.Address())
 		require.Equal(t, "5s", http.ReadHeaderTimeoutStr)
@@ -43,9 +45,12 @@ func TestReadEnv(t *testing.T) {
 		require.Zero(t, tls.CertFile())
 		require.Zero(t, tls.KeyFileStr)
 		require.Zero(t, tls.KeyFile())
-		require.True(t, tls.BuildSelfSigned)
+		require.Equal(t, "true", tls.BuildSelfSignedStr)
+		require.True(t, tls.IsBuildSelfSigned())
 
 		dns := cfg.Rioni.Server.Dns
+		require.Equal(t, "true", dns.EnableStr)
+		require.True(t, dns.IsEnabled())
 		require.Equal(t, ":53", dns.AddressStr)
 		require.Equal(t, ":53", dns.Address())
 		require.Equal(t, "2s", dns.ReadTimeoutStr)
@@ -60,6 +65,7 @@ func TestReadEnv(t *testing.T) {
 		t.Setenv(EnvRioniRelayClientTimeout, "7s")
 		t.Setenv(EnvRioniRelayClientReadLimit, "2mb")
 
+		t.Setenv(EnvRioniServerHttpEnable, "false")
 		t.Setenv(EnvRioniServerHttpAddress, "127.0.0.1:8443")
 		t.Setenv(EnvRioniServerHttpReadHeaderTimeout, "6s")
 		t.Setenv(EnvRioniServerHttpReadTimeout, "11s")
@@ -70,6 +76,7 @@ func TestReadEnv(t *testing.T) {
 		t.Setenv(EnvRioniServerHttpTlsKeyFile, "/tmp/key.pem")
 		t.Setenv(EnvRioniServerHttpTlsBuildSelfSigned, "false")
 
+		t.Setenv(EnvRioniServerDnsEnable, "false")
 		t.Setenv(EnvRioniServerDnsAddress, "127.0.0.1:1053")
 		t.Setenv(EnvRioniServerDnsReadTimeout, "3s")
 		t.Setenv(EnvRioniServerDnsWriteTimeout, "4s")
@@ -85,6 +92,8 @@ func TestReadEnv(t *testing.T) {
 		require.Equal(t, int64(2*1024*1024), cfg.Rioni.Relay.Client.ReadLimit())
 
 		http := cfg.Rioni.Server.Http
+		require.Equal(t, "false", http.EnableStr)
+		require.False(t, http.IsEnabled())
 		require.Equal(t, "127.0.0.1:8443", http.AddressStr)
 		require.Equal(t, "127.0.0.1:8443", http.Address())
 		require.Equal(t, "6s", http.ReadHeaderTimeoutStr)
@@ -101,9 +110,12 @@ func TestReadEnv(t *testing.T) {
 		require.Equal(t, "/tmp/cert.pem", http.Tls.CertFile())
 		require.Equal(t, "/tmp/key.pem", http.Tls.KeyFileStr)
 		require.Equal(t, "/tmp/key.pem", http.Tls.KeyFile())
-		require.False(t, http.Tls.BuildSelfSigned)
+		require.Equal(t, "false", http.Tls.BuildSelfSignedStr)
+		require.False(t, http.Tls.IsBuildSelfSigned())
 
 		dns := cfg.Rioni.Server.Dns
+		require.Equal(t, "false", dns.EnableStr)
+		require.False(t, dns.IsEnabled())
 		require.Equal(t, "127.0.0.1:1053", dns.AddressStr)
 		require.Equal(t, "127.0.0.1:1053", dns.Address())
 		require.Equal(t, "3s", dns.ReadTimeoutStr)
@@ -122,6 +134,7 @@ func TestReadEnvToTarget(t *testing.T) {
 	t.Setenv(EnvRioniRelayUpstream, "https://upstream-env.example")
 	t.Setenv(EnvRioniRelayClientTimeout, "8s")
 	t.Setenv(EnvRioniRelayClientReadLimit, "3mb")
+	t.Setenv(EnvRioniServerHttpEnable, "false")
 	t.Setenv(EnvRioniServerHttpAddress, "127.0.0.1:9443")
 	t.Setenv(EnvRioniServerHttpReadHeaderTimeout, "7s")
 	t.Setenv(EnvRioniServerHttpReadTimeout, "15s")
@@ -129,6 +142,7 @@ func TestReadEnvToTarget(t *testing.T) {
 	t.Setenv(EnvRioniServerHttpWriteTimeout, "13s")
 	t.Setenv(EnvRioniServerHttpIdleTimeout, "35s")
 	t.Setenv(EnvRioniServerHttpTlsBuildSelfSigned, "false")
+	t.Setenv(EnvRioniServerDnsEnable, "false")
 	t.Setenv(EnvRioniServerDnsAddress, "127.0.0.1:2053")
 	t.Setenv(EnvRioniServerDnsReadTimeout, "5s")
 	t.Setenv(EnvRioniServerDnsWriteTimeout, "6s")
@@ -146,6 +160,8 @@ func TestReadEnvToTarget(t *testing.T) {
 	require.Equal(t, []string{"8.8.8.8", "1.1.1.1"}, relay.Client.Dns)
 
 	http := cfg.Rioni.Server.Http
+	require.Equal(t, "false", http.EnableStr)
+	require.False(t, http.IsEnabled())
 	require.Equal(t, "127.0.0.1:9443", http.AddressStr)
 	require.Equal(t, "127.0.0.1:9443", http.Address())
 	require.Equal(t, "7s", http.ReadHeaderTimeoutStr)
@@ -162,9 +178,12 @@ func TestReadEnvToTarget(t *testing.T) {
 	require.Equal(t, "tls/rioni.crt", http.Tls.CertFile())
 	require.Equal(t, "tls/rioni.key", http.Tls.KeyFileStr)
 	require.Equal(t, "tls/rioni.key", http.Tls.KeyFile())
-	require.False(t, http.Tls.BuildSelfSigned)
+	require.Equal(t, "false", http.Tls.BuildSelfSignedStr)
+	require.False(t, http.Tls.IsBuildSelfSigned())
 
 	dns := cfg.Rioni.Server.Dns
+	require.Equal(t, "false", dns.EnableStr)
+	require.False(t, dns.IsEnabled())
 	require.Equal(t, "127.0.0.1:2053", dns.AddressStr)
 	require.Equal(t, "127.0.0.1:2053", dns.Address())
 	require.Equal(t, "5s", dns.ReadTimeoutStr)
@@ -188,6 +207,8 @@ func TestReadFile(t *testing.T) {
 		require.Equal(t, []string{"8.8.8.8", "1.1.1.1"}, relay.Client.Dns)
 
 		http := cfg.Rioni.Server.Http
+		require.Zero(t, http.EnableStr)
+		require.Zero(t, http.IsEnabled())
 		require.Equal(t, ":443", http.AddressStr)
 		require.Equal(t, ":443", http.Address())
 		require.Zero(t, http.ReadHeaderTimeoutStr)
@@ -206,9 +227,12 @@ func TestReadFile(t *testing.T) {
 		require.Equal(t, "tls/rioni.crt", tls.CertFile())
 		require.Equal(t, "tls/rioni.key", tls.KeyFileStr)
 		require.Equal(t, "tls/rioni.key", tls.KeyFile())
-		require.Zero(t, tls.BuildSelfSigned)
+		require.Zero(t, tls.BuildSelfSignedStr)
+		require.Zero(t, tls.IsBuildSelfSigned())
 
 		dns := cfg.Rioni.Server.Dns
+		require.Zero(t, dns.EnableStr)
+		require.Zero(t, dns.IsEnabled())
 		require.Equal(t, ":53", dns.AddressStr)
 		require.Equal(t, ":53", dns.Address())
 		require.Zero(t, dns.ReadTimeoutStr)
