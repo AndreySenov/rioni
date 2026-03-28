@@ -73,7 +73,7 @@ nfpms:
     contents:
       - src: ./build/package/rioni.service
         dst: /lib/systemd/system/rioni.service
-      - src: ./configs/rioni.linux.yml
+      - src: ./configs/rioni.cfg.yml
         dst: /etc/rioni/configs/rioni.cfg.yml
         type: config
       - src: ./LICENSE
@@ -121,10 +121,11 @@ brews:
     custom_block: |-
       service do
         environment_variables(
+          RIONI_CONFIG_FILE: /etc/"rioni/configs/rioni.cfg.yml",
           RIONI_SERVER_HTTP_TLS_CERT_FILE: etc/"rioni/tls/rioni.crt",
           RIONI_SERVER_HTTP_TLS_KEY_FILE: etc/"rioni/tls/rioni.key",
         )
-        run [opt_bin/"rioni", "--config", etc/"rioni/configs/rioni.cfg.yml"]
+        run [opt_bin/"rioni"]
         keep_alive true
       end
     test: |-

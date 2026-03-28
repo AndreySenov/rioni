@@ -11,7 +11,10 @@ Wants=network-online.target
 Type=simple
 User=rioni
 Group=rioni
-ExecStart=/usr/bin/rioni --config /etc/rioni/configs/rioni.cfg.yml
+Environment=RIONI_CONFIG_FILE=/etc/rioni/configs/rioni.cfg.yml
+Environment=RIONI_SERVER_HTTP_TLS_CERT_FILE=/var/lib/rioni/tls/rioni.crt
+Environment=RIONI_SERVER_HTTP_TLS_KEY_FILE=/var/lib/rioni/tls/rioni.key
+ExecStart=/usr/bin/rioni
 Restart=on-failure
 RestartSec=5s
 
