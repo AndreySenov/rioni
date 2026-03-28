@@ -5,9 +5,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
+	"os"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
@@ -32,18 +32,23 @@ func main() {
 
 	configFlag := flag.Lookup("config")
 
-	config := loadConfig(configFlag).Rioni
-
-	if err := cert.Check(
-		config.Server.Http.Tls.CertFile(),
-		config.Server.Http.Tls.KeyFile(),
-		config.Server.Http.Tls.BuildSelfSigned); err != nil {
+	config, err := readConfig(configFlag)
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	dnsRelay := relay.NewRelay(config)
-	dohServer := doh.NewServer(config.Server.Http, dnsRelay)
-	dnsServer := dns.NewServer(config.Server.Dns, dnsRelay)
+	serverConfig := config.Rioni.Server
+
+	if err := cert.Check(
+		serverConfig.Http.Tls.CertFile(),
+		serverConfig.Http.Tls.KeyFile(),
+		serverConfig.Http.Tls.BuildSelfSigned); err != nil {
+		log.Fatal(err)
+	}
+
+	dnsRelay := relay.NewRelay(config.Rioni)
+	dohServer := doh.NewServer(serverConfig.Http, dnsRelay)
+	dnsServer := dns.NewServer(serverConfig.Dns, dnsRelay)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -51,14 +56,14 @@ func main() {
 	startupErr := make(chan error, 2)
 
 	go func() {
-		log.Printf("Starting DNS-over-HTTPS server on %s", config.Server.Http.Address())
+		log.Printf("Starting DNS-over-HTTPS server on %s", serverConfig.Http.Address())
 		if err := dohServer.Start(ctx); err != nil {
 			startupErr <- err
 		}
 	}()
 
 	go func() {
-		log.Printf("Starting DNS server on %s", config.Server.Dns.Address())
+		log.Printf("Starting DNS server on %s", serverConfig.Dns.Address())
 		if err := dnsServer.Start(ctx); err != nil {
 			startupErr <- err
 		}
@@ -85,24 +90,30 @@ func readVersion() string {
 	return "unknown"
 }
 
-func loadConfig(configFlag *flag.Flag) cfg.Config {
-	configPath, err := cfg.ResolvePath(configFlag)
-	if err != nil {
-		log.Fatalf("Failed to resolve config path: %v", err)
+func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
+	path, ok := os.LookupEnv(cfg.EnvRioniConfigFile)
+	if ok && path == "" {
+		log.Printf("environment variable %q is set but empty", cfg.EnvRioniConfigFile)
 	}
 
-	log.Printf("Reading config from %s", configPath)
-	config, err := cfg.Read(configPath)
-	if err != nil {
-		log.Fatalf("Failed to read config: %v", err)
+	if path == "" {
+		if configFlag != nil {
+			path = configFlag.Value.String()
+		}
 	}
 
-	b, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		log.Printf("%s\n%+v", "Configuration loaded", config)
-	} else {
-		log.Printf("%s\n%s", "Configuration loaded", string(b))
+	if path == "" {
+		return cfg.ReadEnv()
 	}
 
-	return config
+	config, err := cfg.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("config file %q does not exist", path)
+			return cfg.ReadEnv()
+		}
+		return cfg.Config{}, err
+	}
+
+	return cfg.ReadEnvToTarget(config)
 }

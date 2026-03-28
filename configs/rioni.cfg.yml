@@ -5,25 +5,25 @@ rioni:
       - https://dns.google/dns-query
       - https://cloudflare-dns.com/dns-query
     client:
-      timeout: 5s # overall timeout for upstream requests including response processing
-      read-limit: 1mb # response reading limit
+      #timeout: 5s # overall timeout for upstream requests including response processing
+      #read-limit: 1mb # response reading limit
       dns:
         # DNS servers to resolve upstream domains
         - "8.8.8.8" # Google Public DNS
         - "1.1.1.1" # Cloudflare DNS
   server:
     http:
-      address: "${RIONI_SERVER_HTTP_ADDRESS:-:443}" # address to listen on
-      read-header-timeout: 5s # maximum time to read request headers
-      read-timeout: 10s # maximum time to read the entire request (header + body)
-      read-limit: 64kb # request reading limit
-      write-timeout: 10s # maximum time to write the response
-      idle-timeout: 30s # maximum time an idle connection will wait for the next request before being closed
+      address: ":443" # address to listen on
+      #read-header-timeout: 5s # maximum time to read request headers
+      #read-timeout: 10s # maximum time to read the entire request (header + body)
+      #read-limit: 64kb # request reading limit
+      #write-timeout: 10s # maximum time to write the response
+      #idle-timeout: 30s # maximum time an idle connection will wait for the next request before being closed
       tls:
         cert-file: "${RIONI_SERVER_HTTP_TLS_CERT_FILE:-tls/rioni.crt}" # path to a certificate file
         key-file: "${RIONI_SERVER_HTTP_TLS_KEY_FILE:-tls/rioni.key}" # path to a private key file
-        build-self-signed: true # if cert-file and key-file do not exist, generate them
+        #build-self-signed: true # if cert-file and key-file do not exist, generate them
     dns:
       address: "${RIONI_SERVER_DNS_ADDRESS:-:53}" # address to listen on
-      read-timeout: 2s # maximum time to read a request
-      write-timeout: 2s # maximum time to write a response
+      #read-timeout: 2s # maximum time to read a request
+      #write-timeout: 2s # maximum time to write a response

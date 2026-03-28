@@ -3,82 +3,22 @@
 
 package cfg
 
-import (
-	"flag"
-	"fmt"
-	"os"
-	"path/filepath"
-)
-
 const (
-	RioniConfigFileEnvVar            = "RIONI_CONFIG_FILE"
-	RioniServerDnsAddressEnvVar      = "RIONI_SERVER_DNS_ADDRESS"
-	RioniServerHttpAddressEnvVar     = "RIONI_SERVER_HTTP_ADDRESS"
-	RioniServerHttpTlsCertFileEnvVar = "RIONI_SERVER_HTTP_TLS_CERT_FILE"
-	RioniServerHttpTlsKeyFileEnvVar  = "RIONI_SERVER_HTTP_TLS_KEY_FILE"
+	EnvRioniConfigFile                   = "RIONI_CONFIG_FILE"
+	EnvRioniRelayUpstream                = "RIONI_RELAY_UPSTREAM"
+	EnvRioniRelayClientTimeout           = "RIONI_RELAY_CLIENT_TIMEOUT"
+	EnvRioniRelayClientReadLimit         = "RIONI_RELAY_CLIENT_READ_LIMIT"
+	EnvRioniRelayClientDns               = "RIONI_RELAY_CLIENT_DNS"
+	EnvRioniServerHttpAddress            = "RIONI_SERVER_HTTP_ADDRESS"
+	EnvRioniServerHttpReadHeaderTimeout  = "RIONI_SERVER_HTTP_READ_HEADER_TIMEOUT"
+	EnvRioniServerHttpReadTimeout        = "RIONI_SERVER_HTTP_READ_TIMEOUT"
+	EnvRioniServerHttpReadLimit          = "RIONI_SERVER_HTTP_READ_LIMIT"
+	EnvRioniServerHttpWriteTimeout       = "RIONI_SERVER_HTTP_WRITE_TIMEOUT"
+	EnvRioniServerHttpIdleTimeout        = "RIONI_SERVER_HTTP_IDLE_TIMEOUT"
+	EnvRioniServerHttpTlsCertFile        = "RIONI_SERVER_HTTP_TLS_CERT_FILE"
+	EnvRioniServerHttpTlsKeyFile         = "RIONI_SERVER_HTTP_TLS_KEY_FILE"
+	EnvRioniServerHttpTlsBuildSelfSigned = "RIONI_SERVER_HTTP_TLS_BUILD_SELF_SIGNED"
+	EnvRioniServerDnsAddress             = "RIONI_SERVER_DNS_ADDRESS"
+	EnvRioniServerDnsReadTimeout         = "RIONI_SERVER_DNS_READ_TIMEOUT"
+	EnvRioniServerDnsWriteTimeout        = "RIONI_SERVER_DNS_WRITE_TIMEOUT"
 )
-
-func ResolvePath(configFlag *flag.Flag) (string, error) {
-	if path, set, err := resolveEnvVar(); set {
-		if err == nil {
-			return path, nil
-		}
-		return "", err
-	}
-
-	if path, set, err := resolveFlag(configFlag); set {
-		if err == nil {
-			return path, nil
-		}
-		return "", err
-	}
-
-	return "", fmt.Errorf("config path is not provided: use --config CLI option or %s environment variable", RioniConfigFileEnvVar)
-}
-
-func resolveFlag(configFlag *flag.Flag) (string, bool, error) {
-	if configFlag == nil || configFlag.Value.String() == "" {
-		return "", false, nil
-	}
-
-	path, err := resolve(configFlag.Value.String())
-	if err != nil {
-		return "", true, err
-	}
-
-	return path, true, nil
-}
-
-func resolveEnvVar() (string, bool, error) {
-	if env, ok := os.LookupEnv(RioniConfigFileEnvVar); ok {
-		if env == "" {
-			return "", true, fmt.Errorf("environment variable %q is set but empty", RioniConfigFileEnvVar)
-		}
-
-		path, err := resolve(env)
-		if err != nil {
-			return "", true, err
-		}
-
-		return path, true, nil
-	}
-	return "", false, nil
-}
-
-func resolve(path string) (string, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		return "", fmt.Errorf("configuration path %q: %w", path, err)
-	}
-
-	if stat.IsDir() {
-		return "", fmt.Errorf("configuration path %q is a directory", path)
-	}
-
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return "", fmt.Errorf("configuration path %q: %w", path, err)
-	}
-
-	return abs, nil
-}
