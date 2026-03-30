@@ -36,7 +36,7 @@ type server struct {
 
 const uri = "/dns-query"
 
-func NewServer(config cfg.HttpConfig, relay relay.Relay) Server {
+func NewServer(config cfg.Http, relay relay.Relay) Server {
 	server := &server{
 		readLimit: config.ReadLimit(),
 		certFile:  config.Tls.CertFile(),

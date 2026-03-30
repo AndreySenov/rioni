@@ -102,7 +102,7 @@ func NewTransport(config cfg.Rioni) http.RoundTripper {
 	}
 }
 
-func normalizeDnsServers(config cfg.ClientConfig) []string {
+func normalizeDnsServers(config cfg.Client) []string {
 	const defaultPort = "53"
 
 	dnsServers := make([]string, 0, len(config.Dns))

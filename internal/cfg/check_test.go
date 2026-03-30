@@ -81,20 +81,20 @@ func config() Config {
 		Rioni: Rioni{
 			Relay: Relay{
 				Upstream: []string{"https://dns.google/dns-query"},
-				Client: ClientConfig{
+				Client: Client{
 					Dns: []string{"8.8.8.8:53"},
 				},
 			},
 			Server: Server{
-				Http: HttpConfig{
+				Http: Http{
 					EnableStr:  "true",
 					AddressStr: ":443",
-					Tls: TlsConfig{
+					Tls: Tls{
 						CertFileStr: "/tmp/cert.pem",
 						KeyFileStr:  "/tmp/key.pem",
 					},
 				},
-				Dns: DnsConfig{
+				Dns: Dns{
 					EnableStr:  "true",
 					AddressStr: ":53",
 				},

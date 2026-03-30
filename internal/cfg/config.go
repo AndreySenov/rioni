@@ -17,112 +17,112 @@ type Rioni struct {
 }
 
 type Relay struct {
-	Upstream []string     `yaml:"upstream" env:"UPSTREAM" envSeparator:","`
-	Client   ClientConfig `yaml:"client" envPrefix:"CLIENT_"`
+	Upstream []string `yaml:"upstream" env:"UPSTREAM" envSeparator:","`
+	Client   Client   `yaml:"client" envPrefix:"CLIENT_"`
 }
 
-type ClientConfig struct {
+type Client struct {
 	TimeoutStr   string   `yaml:"timeout" env:"TIMEOUT" envDefault:"5s"`
 	ReadLimitStr string   `yaml:"read-limit" env:"READ_LIMIT" envDefault:"1mb"`
 	Dns          []string `yaml:"dns" env:"DNS" envSeparator:","`
 }
 
-func (c ClientConfig) Timeout() time.Duration {
+func (c Client) Timeout() time.Duration {
 	d, _ := time.ParseDuration(c.TimeoutStr)
 	return d
 }
 
-func (c ClientConfig) ReadLimit() int64 {
+func (c Client) ReadLimit() int64 {
 	return parseSize(c.ReadLimitStr)
 }
 
 type Server struct {
-	Http HttpConfig `yaml:"http" envPrefix:"HTTP_"`
-	Dns  DnsConfig  `yaml:"dns" envPrefix:"DNS_"`
+	Http Http `yaml:"http" envPrefix:"HTTP_"`
+	Dns  Dns  `yaml:"dns" envPrefix:"DNS_"`
 }
 
-type HttpConfig struct {
-	EnableStr            string    `yaml:"enable" env:"ENABLE" envDefault:"true"`
-	AddressStr           string    `yaml:"address" env:"ADDRESS" envDefault:":443"`
-	ReadHeaderTimeoutStr string    `yaml:"read-header-timeout" env:"READ_HEADER_TIMEOUT" envDefault:"5s"`
-	ReadTimeoutStr       string    `yaml:"read-timeout" env:"READ_TIMEOUT" envDefault:"10s"`
-	ReadLimitStr         string    `yaml:"read-limit" env:"READ_LIMIT" envDefault:"64kb"`
-	WriteTimeoutStr      string    `yaml:"write-timeout" env:"WRITE_TIMEOUT" envDefault:"10s"`
-	IdleTimeoutStr       string    `yaml:"idle-timeout" env:"IDLE_TIMEOUT" envDefault:"30s"`
-	Tls                  TlsConfig `yaml:"tls" envPrefix:"TLS_"`
+type Http struct {
+	EnableStr            string `yaml:"enable" env:"ENABLE" envDefault:"true"`
+	AddressStr           string `yaml:"address" env:"ADDRESS" envDefault:":443"`
+	ReadHeaderTimeoutStr string `yaml:"read-header-timeout" env:"READ_HEADER_TIMEOUT" envDefault:"5s"`
+	ReadTimeoutStr       string `yaml:"read-timeout" env:"READ_TIMEOUT" envDefault:"10s"`
+	ReadLimitStr         string `yaml:"read-limit" env:"READ_LIMIT" envDefault:"64kb"`
+	WriteTimeoutStr      string `yaml:"write-timeout" env:"WRITE_TIMEOUT" envDefault:"10s"`
+	IdleTimeoutStr       string `yaml:"idle-timeout" env:"IDLE_TIMEOUT" envDefault:"30s"`
+	Tls                  Tls    `yaml:"tls" envPrefix:"TLS_"`
 }
 
-func (h HttpConfig) IsEnabled() bool {
+func (h Http) IsEnabled() bool {
 	return parseBool(h.EnableStr)
 }
 
-func (h HttpConfig) Address() string {
+func (h Http) Address() string {
 	return h.AddressStr
 }
 
-func (h HttpConfig) ReadHeaderTimeout() time.Duration {
+func (h Http) ReadHeaderTimeout() time.Duration {
 	d, _ := time.ParseDuration(h.ReadHeaderTimeoutStr)
 	return d
 }
 
-func (h HttpConfig) ReadTimeout() time.Duration {
+func (h Http) ReadTimeout() time.Duration {
 	d, _ := time.ParseDuration(h.ReadTimeoutStr)
 	return d
 }
 
-func (h HttpConfig) ReadLimit() int64 {
+func (h Http) ReadLimit() int64 {
 	return parseSize(h.ReadLimitStr)
 }
 
-func (h HttpConfig) WriteTimeout() time.Duration {
+func (h Http) WriteTimeout() time.Duration {
 	d, _ := time.ParseDuration(h.WriteTimeoutStr)
 	return d
 }
 
-func (h HttpConfig) IdleTimeout() time.Duration {
+func (h Http) IdleTimeout() time.Duration {
 	d, _ := time.ParseDuration(h.IdleTimeoutStr)
 	return d
 }
 
-type TlsConfig struct {
+type Tls struct {
 	CertFileStr        string `yaml:"cert-file" env:"CERT_FILE"`
 	KeyFileStr         string `yaml:"key-file" env:"KEY_FILE"`
 	BuildSelfSignedStr string `yaml:"build-self-signed" env:"BUILD_SELF_SIGNED" envDefault:"true"`
 }
 
-func (t TlsConfig) CertFile() string {
+func (t Tls) CertFile() string {
 	return t.CertFileStr
 }
 
-func (t TlsConfig) KeyFile() string {
+func (t Tls) KeyFile() string {
 	return t.KeyFileStr
 }
 
-func (t TlsConfig) IsBuildSelfSigned() bool {
+func (t Tls) IsBuildSelfSigned() bool {
 	return parseBool(t.BuildSelfSignedStr)
 }
 
-type DnsConfig struct {
+type Dns struct {
 	EnableStr       string `yaml:"enable" env:"ENABLE" envDefault:"true"`
 	AddressStr      string `yaml:"address" env:"ADDRESS" envDefault:":53"`
 	ReadTimeoutStr  string `yaml:"read-timeout" env:"READ_TIMEOUT" envDefault:"2s"`
 	WriteTimeoutStr string `yaml:"write-timeout" env:"WRITE_TIMEOUT" envDefault:"2s"`
 }
 
-func (d DnsConfig) IsEnabled() bool {
+func (d Dns) IsEnabled() bool {
 	return parseBool(d.EnableStr)
 }
 
-func (d DnsConfig) Address() string {
+func (d Dns) Address() string {
 	return d.AddressStr
 }
 
-func (d DnsConfig) ReadTimeout() time.Duration {
+func (d Dns) ReadTimeout() time.Duration {
 	dur, _ := time.ParseDuration(d.ReadTimeoutStr)
 	return dur
 }
 
-func (d DnsConfig) WriteTimeout() time.Duration {
+func (d Dns) WriteTimeout() time.Duration {
 	dur, _ := time.ParseDuration(d.WriteTimeoutStr)
 	return dur
 }

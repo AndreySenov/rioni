@@ -29,7 +29,7 @@ type server struct {
 	shutdownOnce sync.Once
 }
 
-func NewServer(config cfg.DnsConfig, relay relay.Relay) Server {
+func NewServer(config cfg.Dns, relay relay.Relay) Server {
 	server := &server{
 		relay:        relay,
 		writeTimeout: config.WriteTimeout(),
