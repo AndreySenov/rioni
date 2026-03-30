@@ -73,15 +73,21 @@ func (s *server) Start(ctx context.Context) error {
 		return err
 	}
 
+	httpErr := make(chan error, 1)
 	s.waitGroup.Add(1)
 	go func() {
 		defer s.waitGroup.Done()
-		if err := s.http.ServeTLS(listen, s.certFile, s.keyFile); err != nil {
-			log.Println(err)
-		}
+		httpErr <- s.http.ServeTLS(listen, s.certFile, s.keyFile)
 	}()
 
-	return nil
+	select {
+	case err := <-httpErr:
+		_ = s.Shutdown(ctx)
+		return err
+	case <-ctx.Done():
+		_ = s.Shutdown(context.Background())
+		return ctx.Err()
+	}
 }
 
 func (s *server) Shutdown(ctx context.Context) error {
