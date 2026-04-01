@@ -15,9 +15,11 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/AndreySenov/rioni/internal/cfg"
 )
 
-func Build(certFile string, keyFile string) error {
+func Build(tls cfg.Tls) error {
 	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return err
@@ -57,7 +59,7 @@ func Build(certFile string, keyFile string) error {
 		return err
 	}
 
-	if err := writeFile(certFile, 0o644, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
+	if err := writeFile(tls.CertFile(), 0o644, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
 		return err
 	}
 
@@ -66,7 +68,7 @@ func Build(certFile string, keyFile string) error {
 		return err
 	}
 
-	if err := writeFile(keyFile, 0o600, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKeyBytes}); err != nil {
+	if err := writeFile(tls.KeyFile(), 0o600, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKeyBytes}); err != nil {
 		return err
 	}
 

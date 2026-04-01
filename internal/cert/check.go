@@ -4,19 +4,16 @@
 package cert
 
 import (
-	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
+
+	"github.com/AndreySenov/rioni/internal/cfg"
 )
 
-func Check(certPath string, keyPath string, buildSelfSigned bool) error {
-	if certPath == "" || keyPath == "" {
-		return errors.New("HTTP TLS requires both cert-file and key-file")
-	}
-
-	_, certErr := os.Stat(certPath)
-	_, keyErr := os.Stat(keyPath)
+func Check(tls cfg.Tls) error {
+	_, certErr := os.Stat(tls.CertFile())
+	_, keyErr := os.Stat(tls.KeyFile())
 
 	if certErr == nil && keyErr == nil {
 		return nil
@@ -34,14 +31,17 @@ func Check(certPath string, keyPath string, buildSelfSigned bool) error {
 
 	if certMissing != keyMissing {
 		if certMissing {
-			return fmt.Errorf("cert-file %q does not exist but key-file %q exists; fix paths or delete the key-file to allow generation", certPath, keyPath)
+			return fmt.Errorf("cert-file %q does not exist but key-file %q exists; fix paths or delete the key-file to allow generation", tls.CertFile(), tls.KeyFile())
 		}
-		return fmt.Errorf("key-file %q does not exist but cert-file %q exists; fix paths or delete the cert-file to allow generation", keyPath, certPath)
+		return fmt.Errorf("key-file %q does not exist but cert-file %q exists; fix paths or delete the cert-file to allow generation", tls.KeyFile(), tls.CertFile())
 	}
 
-	if buildSelfSigned {
-		log.Println("Generating self-signed certificate")
-		if err := Build(certPath, keyPath); err != nil {
+	if tls.IsBuildSelfSigned() {
+		slog.Info("generating self-signed certificate",
+			"cert_file", tls.CertFile(),
+			"key_file", tls.KeyFile(),
+		)
+		if err := Build(tls); err != nil {
 			return fmt.Errorf("failed to build self-signed certificate: %w", err)
 		}
 	}

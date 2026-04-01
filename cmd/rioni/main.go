@@ -6,7 +6,8 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -20,39 +21,41 @@ import (
 )
 
 func main() {
-	log.Printf("Rioni %s", readVersion())
-
 	versionFlag := flag.Bool("version", false, "print version and exit")
 	flag.String("config", "", "path to config file")
 	flag.Parse()
 
 	if *versionFlag {
-		return
+		fmt.Println(readVersion())
+		os.Exit(0)
 	}
+
+	slog.Info("starting Rioni", "version", readVersion())
 
 	configFlag := flag.Lookup("config")
 
 	config, err := readConfig(configFlag)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to read config, shutting down", "error", err)
+		os.Exit(1)
 	}
 
 	err = cfg.Check(config)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("invalid config, shutting down", "error", err)
+		os.Exit(1)
 	}
 
 	serverConfig := config.Rioni.Server
 	anyServerEnabled := serverConfig.Http.IsEnabled() || serverConfig.Dns.IsEnabled()
 	if !anyServerEnabled {
-		log.Fatal("No servers enabled; exiting")
+		slog.Error("no servers are enabled, shutting down")
+		os.Exit(1)
 	}
 
-	if err := cert.Check(
-		serverConfig.Http.Tls.CertFile(),
-		serverConfig.Http.Tls.KeyFile(),
-		serverConfig.Http.Tls.IsBuildSelfSigned()); err != nil {
-		log.Fatal(err)
+	if err := cert.Check(serverConfig.Http.Tls); err != nil {
+		slog.Error("TLS certificate error, shutting down", "error", err)
+		os.Exit(1)
 	}
 
 	dnsRelay := relay.NewRelay(config.Rioni)
@@ -66,7 +69,7 @@ func main() {
 
 	if serverConfig.Http.IsEnabled() {
 		go func() {
-			log.Printf("Starting DNS-over-HTTPS server on %s", serverConfig.Http.Address())
+			slog.Info("starting DNS-over-HTTPS server", "address", serverConfig.Http.Address())
 			if err := dohServer.Start(ctx); err != nil {
 				startupErr <- err
 			}
@@ -75,7 +78,7 @@ func main() {
 
 	if serverConfig.Dns.IsEnabled() {
 		go func() {
-			log.Printf("Starting DNS server on %s", serverConfig.Dns.Address())
+			slog.Info("starting DNS server", "address", serverConfig.Dns.Address())
 			if err := dnsServer.Start(ctx); err != nil {
 				startupErr <- err
 			}
@@ -84,14 +87,14 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		log.Println("Shutdown requested")
+		slog.Info("shutdown requested")
 	case err := <-startupErr:
-		log.Printf("startup error: %v", err)
+		slog.Error("server failed to start", "error", err)
 	}
 
 	_ = dohServer.Shutdown(ctx)
 	_ = dnsServer.Shutdown(ctx)
-	log.Println("Shut down")
+	slog.Info("shutdown complete")
 }
 
 func readVersion() string {
@@ -106,7 +109,7 @@ func readVersion() string {
 func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
 	path, ok := os.LookupEnv(cfg.EnvRioniConfigFile)
 	if ok && path == "" {
-		log.Printf("environment variable %q is set but empty", cfg.EnvRioniConfigFile)
+		slog.Warn("environment variable is set but empty, ignored", "name", cfg.EnvRioniConfigFile)
 	}
 
 	if path == "" {
@@ -122,7 +125,7 @@ func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
 	config, err := cfg.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Printf("config file %q does not exist", path)
+			slog.Warn("config file does not exist", "path", path)
 			return cfg.ReadEnv()
 		}
 		return cfg.Config{}, err

@@ -6,7 +6,7 @@ package dns
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -117,14 +117,14 @@ func (s *server) Shutdown(ctx context.Context) error {
 
 func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
 	if s == nil || s.relay == nil {
-		log.Println("dns server is not initialized")
+		slog.Error("dns server is not initialized")
 		dns.HandleFailed(w, r)
 		return
 	}
 
 	query, err := r.Pack()
 	if err != nil {
-		log.Printf("error packing DNS message: %v", err)
+		slog.Error("failed to pack DNS message", "error", err)
 		dns.HandleFailed(w, r)
 		return
 	}
@@ -134,32 +134,32 @@ func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
 
 	responseBytes, err := s.relay.Exchange(ctx, query)
 	if err != nil {
-		log.Printf("error querying upstream: %v", err)
+		slog.Error("failed to query upstream", "error", err)
 		dns.HandleFailed(w, r)
 		return
 	}
 
 	response := new(dns.Msg)
 	if err := response.Unpack(responseBytes); err != nil {
-		log.Printf("error unpacking DNS response: %v", err)
+		slog.Error("failed to unpack DNS response", "error", err)
 		dns.HandleFailed(w, r)
 		return
 	}
 
 	if response.Id != r.Id {
-		log.Printf("upstream answer id mismatch")
+		slog.Error("upstream answer id mismatch")
 		dns.HandleFailed(w, r)
 		return
 	}
 
 	if !response.Response {
-		log.Printf("upstream returned query instead of answer")
+		slog.Error("upstream returned query instead of answer")
 		dns.HandleFailed(w, r)
 		return
 	}
 
 	if err := w.WriteMsg(response); err != nil {
-		log.Printf("error writing DNS response: %v", err)
+		slog.Error("failed to write DNS response", "error", err)
 		return
 	}
 }

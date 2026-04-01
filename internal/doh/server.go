@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
@@ -114,7 +114,7 @@ func (s *server) Shutdown(ctx context.Context) error {
 
 func (s *server) handle(w http.ResponseWriter, r *http.Request) {
 	if s == nil || s.relay == nil {
-		log.Println("http server is not initialized")
+		slog.Error("http server is not initialized")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -142,7 +142,7 @@ func (s *server) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	req, err := io.ReadAll(http.MaxBytesReader(w, r.Body, s.readLimit+1))
 	if err != nil {
-		log.Println(err)
+		slog.Error("failed to read request body", "error", err)
 		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
 		return
 	}
@@ -164,7 +164,7 @@ func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
 
 	dnsMessage, err := base64.RawURLEncoding.DecodeString(dnsParam)
 	if err != nil {
-		log.Println(err)
+		slog.Error("failed to decode DNS message", "error", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
@@ -175,7 +175,7 @@ func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
 func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Request) {
 	resp, err := s.relay.Exchange(r.Context(), dnsMessage)
 	if err != nil {
-		log.Println(err)
+		slog.Error("failed to relay DNS message", "error", err)
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		return
 	}
@@ -184,6 +184,6 @@ func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(resp)
 	if err != nil {
-		log.Println(err)
+		slog.Error("failed to write response", "error", err)
 	}
 }
