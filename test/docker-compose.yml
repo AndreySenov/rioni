@@ -1,0 +1,9 @@
+services:
+  rioni:
+    image: ghcr.io/andreysenov/rioni:latest
+    container_name: rioni
+    restart: unless-stopped
+    ports:
+      - "8443:443/tcp"
+      - "8053:53/udp"
+      - "8053:53/tcp"

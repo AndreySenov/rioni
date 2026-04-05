@@ -1,9 +1,30 @@
 # Installation
 
-Rioni provides pre-built binaries for arm64 and amd64 architectures,
+Rioni is distributed as a Docker image and as pre-built binaries for `arm64` and `amd64` architectures,
 supporting Linux, macOS, FreeBSD, and Windows.
 
-Official releases can be downloaded from the [GitHub Releases](https://github.com/AndreySenov/rioni/releases) page.
+* Official Docker images are available on [GitHub Container Registry](https://github.com/AndreySenov/rioni/pkgs/container/rioni).
+* Official releases can be downloaded from [GitHub Releases](https://github.com/AndreySenov/rioni/releases).
+
+## Docker
+
+The fastest way to deploy Rioni in an isolated environment is using [Docker](https://www.docker.com).
+This method provides a pre-configured environment, making it easy to manage Rioni as a service with standard Docker tools.
+
+To get started quickly, run:
+
+```sh
+docker run -d \
+  --name rioni \
+  --restart always \
+  -p 443:443/tcp \
+  -p 53:53/tcp \
+  -p 53:53/udp \
+  ghcr.io/andreysenov/rioni:latest
+```
+
+For detailed step-by-step instructions and configuration examples,
+please refer to the guide [How to install Rioni with Docker](installation_guide_docker.md).
 
 ## Homebrew
 
