@@ -10,6 +10,11 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  attestations: write
+  contents: write
+  packages: write
+
 jobs:
   check:
     name: Check and Build
@@ -37,9 +42,6 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    permissions:
-      attestations: write
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
