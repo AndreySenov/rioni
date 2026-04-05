@@ -52,4 +52,4 @@ report-licenses:
 .PHONY: build-release-snapshot
 build-release-snapshot:
 	$(GORELEASER) check
-	$(GORELEASER) release --snapshot --clean
+	$(GORELEASER) release --snapshot --clean --skip=publish

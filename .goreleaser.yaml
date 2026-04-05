@@ -1,11 +1,14 @@
 version: 2
 
+project_name: rioni
+
 before:
   hooks:
     - make check
 
 builds:
-  - main: ./cmd/rioni
+  - id: rioni
+    main: ./cmd/rioni
     binary: rioni
     flags:
       - -trimpath
@@ -130,6 +133,27 @@ brews:
       end
     test: |-
       system "#{bin}/rioni", "--version"
+
+dockers_v2:
+  - images:
+      - "ghcr.io/andreysenov/rioni"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+      - "latest"
+      - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .Major }}"
+    labels:
+      "org.opencontainers.image.title": "Rioni"
+      "org.opencontainers.image.description": "An open-source DNS proxy server"
+      "org.opencontainers.image.licenses": "Apache-2.0"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+    dockerfile: "build/package/Dockerfile"
 
 changelog:
   sort: asc

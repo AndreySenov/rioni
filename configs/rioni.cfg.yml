@@ -26,6 +26,6 @@ rioni:
         #build-self-signed: true # if cert-file and key-file do not exist, generate them
     dns:
       #enable: true # enable DNS server
-      address: "${RIONI_SERVER_DNS_ADDRESS:-:53}" # address to listen on
+      address: ":53" # address to listen on
       #read-timeout: 2s # maximum time to read a request
       #write-timeout: 2s # maximum time to write a response
