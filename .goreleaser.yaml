@@ -145,6 +145,8 @@ dockers_v2:
       - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "{{ .Major }}.{{ .Minor }}"
       - "{{ .Major }}"
+    build_args:
+      VERSION: "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
     labels:
       "org.opencontainers.image.title": "Rioni"
       "org.opencontainers.image.description": "An open-source DNS proxy server"

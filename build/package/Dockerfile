@@ -1,7 +1,9 @@
 FROM alpine:3.23
 
 ARG TARGETPLATFORM
+ARG VERSION
 
+ENV RIONI_VERSION=${VERSION}
 ENV HOME=/home/rioni
 ENV RIONI=/usr/local/bin/rioni
 ENV RIONI_RELAY_UPSTREAM=https://dns.google/dns-query,https://cloudflare-dns.com/dns-query
