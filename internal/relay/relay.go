@@ -28,8 +28,11 @@ func NewRelay(config cfg.Rioni) Relay {
 }
 
 func (r *relay) Exchange(ctx context.Context, dnsMessage []byte) ([]byte, error) {
-	if r == nil || r.client == nil {
+	if r == nil {
 		return nil, fmt.Errorf("relay is not initialized")
+	}
+	if r.client == nil {
+		return nil, fmt.Errorf("relay upstream client is not initialized")
 	}
 	if len(dnsMessage) == 0 {
 		return nil, fmt.Errorf("dns message is empty")

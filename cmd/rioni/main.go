@@ -17,6 +17,7 @@ import (
 	"github.com/AndreySenov/rioni/internal/cfg"
 	"github.com/AndreySenov/rioni/internal/dns"
 	"github.com/AndreySenov/rioni/internal/doh"
+	"github.com/AndreySenov/rioni/internal/logx"
 	"github.com/AndreySenov/rioni/internal/relay"
 )
 
@@ -25,42 +26,48 @@ func main() {
 	flag.String("config", "", "path to config file")
 	flag.Parse()
 
+	version := readVersion()
 	if *versionFlag {
-		fmt.Println(readVersion())
+		fmt.Println(version)
 		os.Exit(0)
 	}
 
-	slog.Info("starting Rioni", "version", readVersion())
+	baseLogger := logx.NewJsonLog("rioni", version)
+	slog.SetDefault(baseLogger)
+
+	logger := baseLogger.With(logx.ComponentKey, "main")
+
+	logger.Info("starting Rioni")
 
 	configFlag := flag.Lookup("config")
 
-	config, err := readConfig(configFlag)
+	config, err := readConfig(logger, configFlag)
 	if err != nil {
-		slog.Error("failed to read config, shutting down", "error", err)
+		logger.Error("failed to read config, shutting down", "error", err)
 		os.Exit(1)
 	}
 
 	err = cfg.Check(config)
 	if err != nil {
-		slog.Error("invalid config, shutting down", "error", err)
+		logger.Error("invalid config, shutting down", "error", err)
 		os.Exit(1)
 	}
 
 	serverConfig := config.Rioni.Server
 	anyServerEnabled := serverConfig.Http.IsEnabled() || serverConfig.Dns.IsEnabled()
 	if !anyServerEnabled {
-		slog.Error("no servers are enabled, shutting down")
+		logger.Error("no servers are enabled, shutting down")
 		os.Exit(1)
 	}
 
 	if err := cert.Check(serverConfig.Http.Tls); err != nil {
-		slog.Error("TLS certificate error, shutting down", "error", err)
+		logger.Error("TLS certificate error, shutting down", "error", err)
 		os.Exit(1)
 	}
 
 	dnsRelay := relay.NewRelay(config.Rioni)
-	dohServer := doh.NewServer(serverConfig.Http, dnsRelay)
-	dnsServer := dns.NewServer(serverConfig.Dns, dnsRelay)
+	dohServer := doh.NewServer(baseLogger, serverConfig.Http, dnsRelay)
+	dnsServer := dns.NewServer(baseLogger, serverConfig.Dns, dnsRelay)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -69,32 +76,32 @@ func main() {
 
 	if serverConfig.Http.IsEnabled() {
 		go func() {
-			slog.Info("starting DNS-over-HTTPS server", "address", serverConfig.Http.Address())
+			logger.Info("starting DNS-over-HTTPS server", "address", serverConfig.Http.Address())
 			if err := dohServer.Start(ctx); err != nil {
-				startupErr <- err
+				startupErr <- fmt.Errorf("DNS-over-HTTPS server error: %w", err)
 			}
 		}()
 	}
 
 	if serverConfig.Dns.IsEnabled() {
 		go func() {
-			slog.Info("starting DNS server", "address", serverConfig.Dns.Address())
+			logger.Info("starting DNS server", "address", serverConfig.Dns.Address())
 			if err := dnsServer.Start(ctx); err != nil {
-				startupErr <- err
+				startupErr <- fmt.Errorf("DNS server error: %w", err)
 			}
 		}()
 	}
 
 	select {
 	case <-ctx.Done():
-		slog.Info("shutdown requested")
+		logger.Info("shutdown requested")
 	case err := <-startupErr:
-		slog.Error("server failed to start", "error", err)
+		logger.Error("server failed to start", "error", err)
 	}
 
 	_ = dohServer.Shutdown(ctx)
 	_ = dnsServer.Shutdown(ctx)
-	slog.Info("shutdown complete")
+	logger.Info("shutdown complete")
 }
 
 func readVersion() string {
@@ -106,10 +113,10 @@ func readVersion() string {
 	return "unknown"
 }
 
-func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
+func readConfig(logger *slog.Logger, configFlag *flag.Flag) (cfg.Config, error) {
 	path, ok := os.LookupEnv(cfg.EnvRioniConfigFile)
 	if ok && path == "" {
-		slog.Warn("environment variable is set but empty, ignored", "name", cfg.EnvRioniConfigFile)
+		logger.Warn("environment variable is set but empty, ignored", "name", cfg.EnvRioniConfigFile)
 	}
 
 	if path == "" {
@@ -125,7 +132,7 @@ func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
 	config, err := cfg.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			slog.Warn("config file does not exist", "path", path)
+			logger.Warn("config file does not exist", "path", path)
 			return cfg.ReadEnv()
 		}
 		return cfg.Config{}, err

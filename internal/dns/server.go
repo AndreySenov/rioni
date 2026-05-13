@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AndreySenov/rioni/internal/cfg"
+	"github.com/AndreySenov/rioni/internal/logx"
 	"github.com/AndreySenov/rioni/internal/relay"
 	"github.com/miekg/dns"
 )
@@ -21,6 +22,7 @@ type Server interface {
 }
 
 type server struct {
+	logger       *slog.Logger
 	relay        relay.Relay
 	writeTimeout time.Duration
 	udp          *dns.Server
@@ -29,8 +31,13 @@ type server struct {
 	shutdownOnce sync.Once
 }
 
-func NewServer(config cfg.Dns, relay relay.Relay) Server {
+const (
+	componentName = "dns-server"
+)
+
+func NewServer(baseLogger *slog.Logger, config cfg.Dns, relay relay.Relay) Server {
 	server := &server{
+		logger:       baseLogger.With(logx.ComponentKey, componentName),
 		relay:        relay,
 		writeTimeout: config.WriteTimeout(),
 		waitGroup:    sync.WaitGroup{},
@@ -116,16 +123,30 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
-	if s == nil || s.relay == nil {
+	if s == nil {
 		slog.Error("dns server is not initialized")
-		dns.HandleFailed(w, r)
+		handleFailed(w, r)
+		return
+	}
+
+	if s.relay == nil {
+		logx.ErrorForDnsRequest(s.logger, w, "DNS relay is not initialized")
+		handleFailed(w, r)
+		return
+	}
+
+	if r == nil {
+		logx.ErrorForDnsRequest(s.logger, w, "DNS request is nil")
+		handleFailed(w, r)
 		return
 	}
 
 	query, err := r.Pack()
 	if err != nil {
-		slog.Error("failed to pack DNS message", "error", err)
-		dns.HandleFailed(w, r)
+		logx.ErrorForDnsRequest(s.logger, w, "failed to pack DNS message",
+			"error", err,
+		)
+		handleFailed(w, r)
 		return
 	}
 
@@ -134,32 +155,47 @@ func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
 
 	responseBytes, err := s.relay.Exchange(ctx, query)
 	if err != nil {
-		slog.Error("failed to query upstream", "error", err)
-		dns.HandleFailed(w, r)
+		logx.ErrorForDnsRequest(s.logger, w, "failed to query upstream",
+			"error", err,
+		)
+		handleFailed(w, r)
 		return
 	}
 
 	response := new(dns.Msg)
 	if err := response.Unpack(responseBytes); err != nil {
-		slog.Error("failed to unpack DNS response", "error", err)
-		dns.HandleFailed(w, r)
+		logx.ErrorForDnsRequest(s.logger, w, "failed to unpack DNS response",
+			"error", err,
+		)
+		handleFailed(w, r)
 		return
 	}
 
 	if response.Id != r.Id {
-		slog.Error("upstream answer id mismatch")
-		dns.HandleFailed(w, r)
+		logx.ErrorForDnsRequest(s.logger, w, "upstream answer id mismatch")
+		handleFailed(w, r)
 		return
 	}
 
 	if !response.Response {
-		slog.Error("upstream returned query instead of answer")
-		dns.HandleFailed(w, r)
+		logx.ErrorForDnsRequest(s.logger, w, "upstream returned query instead of answer")
+		handleFailed(w, r)
 		return
 	}
 
 	if err := w.WriteMsg(response); err != nil {
-		slog.Error("failed to write DNS response", "error", err)
+		logx.ErrorForDnsRequest(s.logger, w, "failed to write DNS response",
+			"error", err,
+		)
 		return
 	}
+}
+
+func handleFailed(w dns.ResponseWriter, r *dns.Msg) {
+	if w == nil || r == nil {
+		return
+	}
+	m := new(dns.Msg)
+	m.SetRcode(r, dns.RcodeServerFailure)
+	_ = w.WriteMsg(m)
 }

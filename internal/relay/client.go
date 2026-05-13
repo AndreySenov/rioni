@@ -6,6 +6,7 @@ package relay
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,8 +35,11 @@ func NewClient(config cfg.Rioni) Client {
 }
 
 func (u *client) Query(ctx context.Context, endpoint string, dnsMessage []byte) ([]byte, error) {
-	if u == nil || u.client == nil {
+	if u == nil {
 		return nil, fmt.Errorf("upstream client is not initialized")
+	}
+	if u.client == nil {
+		return nil, fmt.Errorf("http client is not initialized")
 	}
 	if len(dnsMessage) == 0 {
 		return nil, fmt.Errorf("dns message is empty")
@@ -53,23 +57,41 @@ func (u *client) Query(ctx context.Context, endpoint string, dnsMessage []byte) 
 	if err != nil {
 		return nil, fmt.Errorf("error sending upstream request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if httpx.IsStatusNotOk(resp) {
 		return nil, fmt.Errorf("unexpected upstream response status code: %d", resp.StatusCode)
 	}
 
-	if contentType := resp.Header.Get(httpx.HeaderContentType); contentType != httpx.ContentTypeApplicationDnsMessage {
+	contentType, _, err := httpx.GetResponseContentType(resp)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing upstream response content type: %w", err)
+	}
+	if contentType != httpx.ContentTypeApplicationDnsMessage {
 		return nil, fmt.Errorf("unexpected upstream response content type: %s", contentType)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, u.readLimit+1))
+	contentLength := resp.ContentLength
+	if contentLength == 0 {
+		return nil, errors.New("upstream response body is empty")
+	}
+	if contentLength > u.readLimit {
+		return nil, fmt.Errorf("upstream response body size %d exceeds read limit %d", contentLength, u.readLimit)
+	}
+
+	if contentLength == -1 {
+		contentLength = u.readLimit
+	}
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, contentLength+1))
 	if err != nil {
 		return nil, fmt.Errorf("error reading upstream response body: %w", err)
 	}
 
-	if int64(len(body)) > u.readLimit {
-		return nil, fmt.Errorf("upstream response too large (>%d bytes)", u.readLimit)
+	if int64(len(body)) > contentLength {
+		return nil, fmt.Errorf("upstream response too large (>%d bytes)", contentLength)
 	}
 
 	return body, nil

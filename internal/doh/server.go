@@ -16,6 +16,7 @@ import (
 
 	"github.com/AndreySenov/rioni/internal/cfg"
 	"github.com/AndreySenov/rioni/internal/httpx"
+	"github.com/AndreySenov/rioni/internal/logx"
 	"github.com/AndreySenov/rioni/internal/relay"
 )
 
@@ -25,6 +26,7 @@ type Server interface {
 }
 
 type server struct {
+	logger       *slog.Logger
 	readLimit    int64
 	certFile     string
 	keyFile      string
@@ -34,10 +36,14 @@ type server struct {
 	shutdownOnce sync.Once
 }
 
-const uri = "/dns-query"
+const (
+	componentName = "doh-server"
+	uri           = "/dns-query"
+)
 
-func NewServer(config cfg.Http, relay relay.Relay) Server {
+func NewServer(baseLogger *slog.Logger, config cfg.Http, relay relay.Relay) Server {
 	server := &server{
+		logger:    baseLogger.With(logx.ComponentKey, componentName),
 		readLimit: config.ReadLimit(),
 		certFile:  config.Tls.CertFile(),
 		keyFile:   config.Tls.KeyFile(),
@@ -113,9 +119,15 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 func (s *server) handle(w http.ResponseWriter, r *http.Request) {
-	if s == nil || s.relay == nil {
+	if s == nil {
 		slog.Error("http server is not initialized")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		httpx.ErrorInternalServerError(w)
+		return
+	}
+
+	if s.relay == nil {
+		s.logger.Error("DNS relay is not initialized")
+		httpx.ErrorInternalServerError(w)
 		return
 	}
 
@@ -125,8 +137,9 @@ func (s *server) handle(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.handleGet(w, r)
 	default:
+		logx.WarnForHttpRequest(s.logger, r, "unsupported method")
 		w.Header().Set(httpx.HeaderAllow, http.MethodGet+", "+http.MethodPost)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		httpx.ErrorMethodNotAllowed(w)
 	}
 }
 
@@ -135,37 +148,78 @@ func (s *server) handlePost(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
+	if accept := r.Header.Get(httpx.HeaderAccept); accept != httpx.ContentTypeApplicationDnsMessage {
+		logx.WarnForHttpRequest(s.logger, r, "unsupported accept header",
+			"accept", accept,
+		)
+		httpx.ErrorNotAcceptable(w)
+		return
+	}
+
 	if contentType := r.Header.Get(httpx.HeaderContentType); contentType != httpx.ContentTypeApplicationDnsMessage {
-		http.Error(w, "Unsupported Media Type", http.StatusUnsupportedMediaType)
+		logx.WarnForHttpRequest(s.logger, r, "unsupported content type",
+			"content_type", contentType,
+		)
+		httpx.ErrorUnsupportedMediaType(w)
 		return
 	}
 
-	req, err := io.ReadAll(http.MaxBytesReader(w, r.Body, s.readLimit+1))
+	contentLength := r.ContentLength
+
+	if contentLength == 0 {
+		logx.WarnForHttpRequest(s.logger, r, "request body is empty")
+		httpx.ErrorLengthRequired(w)
+		return
+	}
+
+	if contentLength > s.readLimit {
+		logx.WarnForHttpRequest(s.logger, r, "request body is too large",
+			"content_length", contentLength,
+			"read_limit", s.readLimit,
+		)
+		httpx.ErrorRequestEntityTooLarge(w)
+		return
+	}
+
+	if contentLength == -1 {
+		contentLength = s.readLimit
+	}
+
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, contentLength+1))
 	if err != nil {
-		slog.Error("failed to read request body", "error", err)
-		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
+		logx.WarnForHttpRequest(s.logger, r, "failed to read request body",
+			"error", err,
+		)
+		httpx.ErrorBadRequest(w)
 		return
 	}
 
-	if int64(len(req)) > s.readLimit {
-		http.Error(w, "Request Entity Too Large", http.StatusRequestEntityTooLarge)
+	if int64(len(body)) > contentLength {
+		logx.WarnForHttpRequest(s.logger, r, "request body is too large",
+			"content_length", contentLength,
+			"read_limit", s.readLimit,
+		)
+		httpx.ErrorRequestEntityTooLarge(w)
 		return
 	}
 
-	s.exchange(req, w, r)
+	s.exchange(body, w, r)
 }
 
 func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
 	dnsParam := r.URL.Query().Get("dns")
 	if dnsParam == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		logx.WarnForHttpRequest(s.logger, r, "missing dns query parameter")
+		httpx.ErrorBadRequest(w)
 		return
 	}
 
 	dnsMessage, err := base64.RawURLEncoding.DecodeString(dnsParam)
 	if err != nil {
-		slog.Error("failed to decode DNS message", "error", err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		logx.WarnForHttpRequest(s.logger, r, "failed to decode DNS message",
+			"error", err,
+		)
+		httpx.ErrorBadRequest(w)
 		return
 	}
 
@@ -175,8 +229,10 @@ func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
 func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Request) {
 	resp, err := s.relay.Exchange(r.Context(), dnsMessage)
 	if err != nil {
-		slog.Error("failed to relay DNS message", "error", err)
-		http.Error(w, "Bad Gateway", http.StatusBadGateway)
+		logx.ErrorForHttpRequest(s.logger, r, "failed to relay DNS message",
+			"error", err,
+		)
+		httpx.ErrorBadGateway(w)
 		return
 	}
 
@@ -184,6 +240,8 @@ func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(resp)
 	if err != nil {
-		slog.Error("failed to write response", "error", err)
+		logx.ErrorForHttpRequest(s.logger, r, "failed to write response",
+			"error", err,
+		)
 	}
 }
