@@ -36,13 +36,13 @@ func NewClient(config cfg.Rioni) Client {
 
 func (u *client) Query(ctx context.Context, endpoint string, dnsMessage []byte) ([]byte, error) {
 	if u == nil {
-		return nil, fmt.Errorf("upstream client is not initialized")
+		return nil, errors.New("upstream client is not initialized")
 	}
 	if u.client == nil {
-		return nil, fmt.Errorf("http client is not initialized")
+		return nil, errors.New("http client is not initialized")
 	}
 	if len(dnsMessage) == 0 {
-		return nil, fmt.Errorf("dns message is empty")
+		return nil, errors.New("dns message is empty")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(dnsMessage))

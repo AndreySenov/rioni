@@ -9,15 +9,22 @@ import (
 	"fmt"
 
 	"github.com/AndreySenov/rioni/internal/cfg"
+	"github.com/miekg/dns"
 )
 
 type Relay interface {
-	Exchange(ctx context.Context, dnsMessage []byte) ([]byte, error)
+	Exchange(ctx context.Context, query *dns.Msg) (*dns.Msg, error)
 }
 
 type relay struct {
 	client   Client
 	upstream []string
+}
+
+type queryResult struct {
+	endpoint string
+	response *dns.Msg
+	err      error
 }
 
 func NewRelay(config cfg.Rioni) Relay {
@@ -27,37 +34,29 @@ func NewRelay(config cfg.Rioni) Relay {
 	}
 }
 
-func (r *relay) Exchange(ctx context.Context, dnsMessage []byte) ([]byte, error) {
+func (r *relay) Exchange(ctx context.Context, query *dns.Msg) (*dns.Msg, error) {
 	if r == nil {
-		return nil, fmt.Errorf("relay is not initialized")
+		return nil, errors.New("relay is not initialized")
 	}
 	if r.client == nil {
-		return nil, fmt.Errorf("relay upstream client is not initialized")
-	}
-	if len(dnsMessage) == 0 {
-		return nil, fmt.Errorf("dns message is empty")
+		return nil, errors.New("relay upstream client is not initialized")
 	}
 	if len(r.upstream) == 0 {
-		return nil, fmt.Errorf("no upstream configured")
+		return nil, errors.New("no upstream configured")
 	}
-
-	type result struct {
-		endpoint string
-		response []byte
-		err      error
+	if query == nil {
+		return nil, errors.New("query is nil")
+	}
+	if query.Response {
+		return nil, errors.New("query is a response")
 	}
 
 	reqCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	results := make(chan result, len(r.upstream))
-
-	for _, u := range r.upstream {
-		endpoint := u
-		go func() {
-			response, err := r.client.Query(reqCtx, endpoint, dnsMessage)
-			results <- result{endpoint: endpoint, response: response, err: err}
-		}()
+	results, err := r.query(reqCtx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
 	}
 
 	var errs []error
@@ -75,4 +74,45 @@ func (r *relay) Exchange(ctx context.Context, dnsMessage []byte) ([]byte, error)
 	}
 
 	return nil, fmt.Errorf("upstream queries failed: %w", errors.Join(errs...))
+}
+
+func (r *relay) query(ctx context.Context, query *dns.Msg) (chan queryResult, error) {
+	bytes, packErr := query.Pack()
+	if packErr != nil {
+		return nil, packErr
+	}
+
+	results := make(chan queryResult, len(r.upstream))
+
+	for _, u := range r.upstream {
+		endpoint := u
+		go func() {
+			res, err := r.client.Query(ctx, endpoint, bytes)
+			if err != nil {
+				results <- queryResult{endpoint: endpoint, err: err}
+				return
+			}
+
+			response := new(dns.Msg)
+			err = response.Unpack(res)
+			if err != nil {
+				results <- queryResult{endpoint: endpoint, err: err}
+				return
+			}
+
+			if !response.Response {
+				results <- queryResult{endpoint: endpoint, err: errors.New("upstream returned query instead of answer")}
+				return
+			}
+
+			if response.Id != query.Id {
+				results <- queryResult{endpoint: endpoint, err: errors.New("upstream answer id mismatch")}
+				return
+			}
+
+			results <- queryResult{endpoint: endpoint, response: response, err: nil}
+		}()
+	}
+
+	return results, nil
 }

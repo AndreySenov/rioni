@@ -5,6 +5,7 @@ package relay
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,7 +21,7 @@ func NewTransport(config cfg.Rioni) http.RoundTripper {
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			if len(dnsServers) == 0 {
-				return nil, fmt.Errorf("no DNS servers configured")
+				return nil, errors.New("no DNS servers configured")
 			}
 
 			type dialResult struct {

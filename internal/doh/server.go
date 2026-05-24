@@ -18,6 +18,7 @@ import (
 	"github.com/AndreySenov/rioni/internal/httpx"
 	"github.com/AndreySenov/rioni/internal/logx"
 	"github.com/AndreySenov/rioni/internal/relay"
+	"github.com/miekg/dns"
 )
 
 type Server interface {
@@ -227,7 +228,17 @@ func (s *server) handleGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Request) {
-	resp, err := s.relay.Exchange(r.Context(), dnsMessage)
+	query := new(dns.Msg)
+	unpackErr := query.Unpack(dnsMessage)
+	if unpackErr != nil {
+		logx.WarnForHttpRequest(s.logger, r, "failed to decode DNS message",
+			"error", unpackErr,
+		)
+		httpx.ErrorBadRequest(w)
+		return
+	}
+
+	resp, err := s.relay.Exchange(r.Context(), query)
 	if err != nil {
 		logx.ErrorForHttpRequest(s.logger, r, "failed to relay DNS message",
 			"error", err,
@@ -236,9 +247,19 @@ func (s *server) exchange(dnsMessage []byte, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	bytes, err := resp.Pack()
+	if err != nil {
+		logx.ErrorForHttpRequest(s.logger, r, "failed to pack DNS response",
+			"error", err,
+		)
+		httpx.ErrorInternalServerError(w)
+		return
+	}
+
 	w.Header().Set(httpx.HeaderContentType, httpx.ContentTypeApplicationDnsMessage)
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(resp)
+
+	_, err = w.Write(bytes)
 	if err != nil {
 		logx.ErrorForHttpRequest(s.logger, r, "failed to write response",
 			"error", err,

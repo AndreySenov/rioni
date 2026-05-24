@@ -141,19 +141,10 @@ func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
 		return
 	}
 
-	query, err := r.Pack()
-	if err != nil {
-		logx.ErrorForDnsRequest(s.logger, w, "failed to pack DNS message",
-			"error", err,
-		)
-		handleFailed(w, r)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), s.writeTimeout)
 	defer cancel()
 
-	responseBytes, err := s.relay.Exchange(ctx, query)
+	response, err := s.relay.Exchange(ctx, r)
 	if err != nil {
 		logx.ErrorForDnsRequest(s.logger, w, "failed to query upstream",
 			"error", err,
@@ -162,28 +153,7 @@ func (s *server) handle(w dns.ResponseWriter, r *dns.Msg) {
 		return
 	}
 
-	response := new(dns.Msg)
-	if err := response.Unpack(responseBytes); err != nil {
-		logx.ErrorForDnsRequest(s.logger, w, "failed to unpack DNS response",
-			"error", err,
-		)
-		handleFailed(w, r)
-		return
-	}
-
-	if response.Id != r.Id {
-		logx.ErrorForDnsRequest(s.logger, w, "upstream answer id mismatch")
-		handleFailed(w, r)
-		return
-	}
-
-	if !response.Response {
-		logx.ErrorForDnsRequest(s.logger, w, "upstream returned query instead of answer")
-		handleFailed(w, r)
-		return
-	}
-
-	if err := w.WriteMsg(response); err != nil {
+	if err = w.WriteMsg(response); err != nil {
 		logx.ErrorForDnsRequest(s.logger, w, "failed to write DNS response",
 			"error", err,
 		)
