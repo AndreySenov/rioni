@@ -74,6 +74,24 @@ func TestCheck(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("log format", func(t *testing.T) {
+		config := config()
+
+		config.Rioni.Log.FormatStr = "json"
+		err := Check(config)
+		require.NoError(t, err)
+
+		config.Rioni.Log.FormatStr = "text"
+		err = Check(config)
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid log format", func(t *testing.T) {
+		config := config()
+		config.Rioni.Log.FormatStr = "invalid"
+		err := Check(config)
+		require.EqualError(t, err, "log configuration error: unsupported log format invalid, specify json or text")
+	})
 }
 
 func config() Config {

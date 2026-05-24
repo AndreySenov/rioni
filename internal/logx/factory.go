@@ -8,8 +8,22 @@ import (
 	"os"
 )
 
+func NewLog(format string, app string, appVersion string) *slog.Logger {
+	switch format {
+	case "text":
+		return NewTextLog(app, appVersion)
+	default:
+		return NewJsonLog(app, appVersion)
+	}
+}
+
 func NewJsonLog(app string, appVersion string) *slog.Logger {
 	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+	return newLog(handler, app, appVersion)
+}
+
+func NewTextLog(app string, appVersion string) *slog.Logger {
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
 	return newLog(handler, app, appVersion)
 }
 

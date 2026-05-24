@@ -32,26 +32,26 @@ func main() {
 		os.Exit(0)
 	}
 
-	baseLogger := logx.NewJsonLog("rioni", version)
-	slog.SetDefault(baseLogger)
-
-	logger := baseLogger.With(logx.ComponentKey, "main")
-
-	logger.Info("starting Rioni")
-
 	configFlag := flag.Lookup("config")
 
-	config, err := readConfig(logger, configFlag)
+	config, err := readConfig(configFlag)
 	if err != nil {
-		logger.Error("failed to read config, shutting down", "error", err)
+		_, _ = fmt.Fprintf(os.Stderr, "failed to read config, shutting down: %v\n", err)
 		os.Exit(1)
 	}
 
 	err = cfg.Check(config)
 	if err != nil {
-		logger.Error("invalid config, shutting down", "error", err)
+		_, _ = fmt.Fprintf(os.Stderr, "invalid config, shutting down: %v\n", err)
 		os.Exit(1)
 	}
+
+	baseLogger := logx.NewLog(config.Rioni.Log.Format(), "rioni", version)
+	slog.SetDefault(baseLogger)
+
+	logger := baseLogger.With(logx.ComponentKey, "main")
+
+	logger.Info("starting Rioni")
 
 	serverConfig := config.Rioni.Server
 	anyServerEnabled := serverConfig.Http.IsEnabled() || serverConfig.Dns.IsEnabled()
@@ -113,10 +113,10 @@ func readVersion() string {
 	return "unknown"
 }
 
-func readConfig(logger *slog.Logger, configFlag *flag.Flag) (cfg.Config, error) {
+func readConfig(configFlag *flag.Flag) (cfg.Config, error) {
 	path, ok := os.LookupEnv(cfg.EnvRioniConfigFile)
 	if ok && path == "" {
-		logger.Warn("environment variable is set but empty, ignored", "name", cfg.EnvRioniConfigFile)
+		_, _ = fmt.Fprintf(os.Stderr, "warning: environment variable %s is set but empty, ignored\n", cfg.EnvRioniConfigFile)
 	}
 
 	if path == "" {
@@ -132,7 +132,7 @@ func readConfig(logger *slog.Logger, configFlag *flag.Flag) (cfg.Config, error) 
 	config, err := cfg.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			logger.Warn("config file does not exist", "path", path)
+			_, _ = fmt.Fprintf(os.Stderr, "warning: config file %s does not exist\n", path)
 			return cfg.ReadEnv()
 		}
 		return cfg.Config{}, err

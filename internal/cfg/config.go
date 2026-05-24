@@ -14,6 +14,7 @@ type Config struct {
 type Rioni struct {
 	Relay  Relay  `yaml:"relay" envPrefix:"RELAY_"`
 	Server Server `yaml:"server" envPrefix:"SERVER_"`
+	Log    Log    `yaml:"log" envPrefix:"LOG_"`
 }
 
 type Relay struct {
@@ -125,4 +126,12 @@ func (d Dns) ReadTimeout() time.Duration {
 func (d Dns) WriteTimeout() time.Duration {
 	dur, _ := time.ParseDuration(d.WriteTimeoutStr)
 	return dur
+}
+
+type Log struct {
+	FormatStr string `yaml:"format" env:"FORMAT" envDefault:"json"`
+}
+
+func (l Log) Format() string {
+	return l.FormatStr
 }

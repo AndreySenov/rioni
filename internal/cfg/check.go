@@ -3,7 +3,10 @@
 
 package cfg
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 func Check(config Config) error {
 	relayConfig := config.Rioni.Relay
@@ -32,6 +35,11 @@ func Check(config Config) error {
 		if dnsConfig.Address() == "" {
 			return errors.New("DNS server configuration error: listen address must be specified")
 		}
+	}
+
+	logConfig := config.Rioni.Log
+	if logConfig.Format() != "" && logConfig.Format() != "json" && logConfig.Format() != "text" {
+		return fmt.Errorf("log configuration error: unsupported log format %s, specify %s or %s", logConfig.Format(), "json", "text")
 	}
 
 	return nil

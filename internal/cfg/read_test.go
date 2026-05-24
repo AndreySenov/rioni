@@ -57,6 +57,10 @@ func TestReadEnv(t *testing.T) {
 		require.Equal(t, 2*time.Second, dns.ReadTimeout())
 		require.Equal(t, "2s", dns.WriteTimeoutStr)
 		require.Equal(t, 2*time.Second, dns.WriteTimeout())
+
+		log := cfg.Rioni.Log
+		require.Equal(t, "json", log.FormatStr)
+		require.Equal(t, "json", log.Format())
 	})
 
 	t.Run("non-empty env", func(t *testing.T) {
@@ -80,6 +84,7 @@ func TestReadEnv(t *testing.T) {
 		t.Setenv(EnvRioniServerDnsAddress, "127.0.0.1:1053")
 		t.Setenv(EnvRioniServerDnsReadTimeout, "3s")
 		t.Setenv(EnvRioniServerDnsWriteTimeout, "4s")
+		t.Setenv(EnvRioniLogFormat, "text")
 
 		cfg, err := ReadEnv()
 		require.NoError(t, err)
@@ -122,6 +127,10 @@ func TestReadEnv(t *testing.T) {
 		require.Equal(t, 3*time.Second, dns.ReadTimeout())
 		require.Equal(t, "4s", dns.WriteTimeoutStr)
 		require.Equal(t, 4*time.Second, dns.WriteTimeout())
+
+		log := cfg.Rioni.Log
+		require.Equal(t, "text", log.FormatStr)
+		require.Equal(t, "text", log.Format())
 	})
 }
 
@@ -146,6 +155,7 @@ func TestReadEnvToTarget(t *testing.T) {
 	t.Setenv(EnvRioniServerDnsAddress, "127.0.0.1:2053")
 	t.Setenv(EnvRioniServerDnsReadTimeout, "5s")
 	t.Setenv(EnvRioniServerDnsWriteTimeout, "6s")
+	t.Setenv(EnvRioniLogFormat, "text")
 
 	cfg, err = ReadEnvToTarget(cfg)
 	require.NoError(t, err)
@@ -190,6 +200,10 @@ func TestReadEnvToTarget(t *testing.T) {
 	require.Equal(t, 5*time.Second, dns.ReadTimeout())
 	require.Equal(t, "6s", dns.WriteTimeoutStr)
 	require.Equal(t, 6*time.Second, dns.WriteTimeout())
+
+	log := cfg.Rioni.Log
+	require.Equal(t, "text", log.FormatStr)
+	require.Equal(t, "text", log.Format())
 }
 
 func TestReadFile(t *testing.T) {
@@ -239,6 +253,10 @@ func TestReadFile(t *testing.T) {
 		require.Zero(t, dns.ReadTimeout())
 		require.Zero(t, dns.WriteTimeoutStr)
 		require.Zero(t, dns.WriteTimeout())
+
+		log := cfg.Rioni.Log
+		require.Empty(t, log.FormatStr)
+		require.Empty(t, log.Format())
 	})
 
 	t.Run("file does not exist", func(t *testing.T) {

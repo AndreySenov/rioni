@@ -176,3 +176,10 @@ allowing you to inject any environment variable into your settings.
     - Environment variable: `RIONI_SERVER_DNS_WRITE_TIMEOUT`
     - Default: `2s`
     - Example: `2s`
+
+- `rioni.log.format` - Log format.
+    - Type: string
+    - Environment variable: `RIONI_LOG_FORMAT`
+    - Default: `json`
+    - Supported values: `json`, `text`
+    - Example: `text`

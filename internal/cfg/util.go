@@ -23,4 +23,5 @@ const (
 	EnvRioniServerDnsAddress             = "RIONI_SERVER_DNS_ADDRESS"
 	EnvRioniServerDnsReadTimeout         = "RIONI_SERVER_DNS_READ_TIMEOUT"
 	EnvRioniServerDnsWriteTimeout        = "RIONI_SERVER_DNS_WRITE_TIMEOUT"
+	EnvRioniLogFormat                    = "RIONI_LOG_FORMAT"
 )
