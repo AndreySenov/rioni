@@ -59,8 +59,8 @@ func TestReadEnv(t *testing.T) {
 		require.Equal(t, 2*time.Second, dns.WriteTimeout())
 
 		log := cfg.Rioni.Log
-		require.Equal(t, "json", log.FormatStr)
-		require.Equal(t, "json", log.Format())
+		require.Equal(t, "text", log.FormatStr)
+		require.Equal(t, "text", log.Format())
 	})
 
 	t.Run("non-empty env", func(t *testing.T) {
