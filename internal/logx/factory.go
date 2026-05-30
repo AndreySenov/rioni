@@ -10,10 +10,10 @@ import (
 
 func NewLog(format string, app string, appVersion string) *slog.Logger {
 	switch format {
-	case "text":
-		return NewTextLog(app, appVersion)
-	default:
+	case "json":
 		return NewJsonLog(app, appVersion)
+	default:
+		return NewTextLog(app, appVersion)
 	}
 }
 

@@ -180,6 +180,6 @@ allowing you to inject any environment variable into your settings.
 - `rioni.log.format` - Log format.
     - Type: string
     - Environment variable: `RIONI_LOG_FORMAT`
-    - Default: `json`
-    - Supported values: `json`, `text`
-    - Example: `text`
+    - Default: `text`
+    - Supported values: `text`, `json`
+    - Example: `json`

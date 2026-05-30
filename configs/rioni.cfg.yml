@@ -30,4 +30,4 @@ rioni:
       #read-timeout: 2s # maximum time to read a request
       #write-timeout: 2s # maximum time to write a response
   log:
-    #format: "json" # log format, supported: json, text
+    #format: "text" # log format, supported: text, json

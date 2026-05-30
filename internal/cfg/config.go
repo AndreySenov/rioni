@@ -129,7 +129,7 @@ func (d Dns) WriteTimeout() time.Duration {
 }
 
 type Log struct {
-	FormatStr string `yaml:"format" env:"FORMAT" envDefault:"json"`
+	FormatStr string `yaml:"format" env:"FORMAT" envDefault:"text"`
 }
 
 func (l Log) Format() string {
